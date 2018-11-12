@@ -40,8 +40,86 @@
 </style>
 
 <script>
-    import * as utils from './utils'
     import { List as ContainerList } from './Container'
+    import * as utils from './utils'
+
+    const dragEvent = evt => {
+        // Handle clicks on other area's than the drag bar
+        if (!utils.matchesSelector(evt.target, this.dragSelector)) {
+            return
+        }
+
+        evt.preventDefault()
+        this.dragging = true
+        this.$emit('dragStart')
+        let xCo = evt.clientX || evt.touches[0].pageX
+        let yCo = evt.clientY || evt.touches[0].pageY
+
+        const handleEnd = evt => {
+            window.removeEventListener('mouseup', handleEnd, true)
+            window.removeEventListener('touchend', handleEnd, true)
+            window.removeEventListener('mousemove', handleMove, true)
+            window.removeEventListener('touchmove', handleMove, true)
+
+            this.dragging = false
+
+            const offset = {
+                x: (evt.clientX || evt.changedTouches[0].pageX) - xCo,
+                y: (evt.clientY || evt.changedTouches[0].pageY) - yCo
+            }
+            this.$emit('dragEnd', {offset})
+        }
+
+        const handleMove = evt => {
+            const offset = {
+                x: (evt.clientX || evt.touches[0].pageX) - xCo,
+                y: (evt.clientY || evt.touches[0].pageY) - yCo
+            }
+            this.$emit('dragUpdate', {offset})
+        }
+
+        window.addEventListener('mouseup', handleEnd, true)
+        window.addEventListener('touchend', handleEnd, true)
+        window.addEventListener('mousemove', handleMove, true)
+        window.addEventListener('touchmove', handleMove, true)
+    }
+
+    const resizeEvent = evt => {
+        evt.preventDefault()
+        evt.stopPropagation()
+        this.resizing = true
+        this.$emit('resizeStart')
+        let mouseX = evt.clientX
+        let mouseY = evt.clientY
+
+        const handleMouseUp = evt => {
+            window.removeEventListener('mouseup', handleMouseUp, true)
+            window.removeEventListener('touchend', handleMouseUp, true)
+            window.removeEventListener('mousemove', handleMouseMove, true)
+            window.removeEventListener('touchmove', handleMouseMove, true)
+
+            this.resizing = false
+
+            var offset = {
+                x: evt.clientX - mouseX,
+                y: evt.clientY - mouseY
+            }
+            this.$emit('resizeEnd', {offset})
+        }
+
+        const handleMouseMove = evt => {
+            var offset = {
+                x: evt.clientX - mouseX,
+                y: evt.clientY - mouseY
+            }
+            this.$emit('resizeUpdate', {offset})
+        }
+
+        window.addEventListener('mouseup', handleMouseUp, true)
+        window.addEventListener('touchend', handleMouseUp, true)
+        window.addEventListener('mousemove', handleMouseMove, true)
+        window.addEventListener('touchmove', handleMouseMove, true)
+    }
 
     export default {
         name: 'DndGridBox',
@@ -54,7 +132,7 @@
                 default: '*'
             }
         },
-        data () {
+        data() {
             return {
                 container: null,
                 dragging: false,
@@ -62,7 +140,7 @@
             }
         },
         computed: {
-            style () {
+            style() {
                 if (this.container && this.container.isBoxVisible(this.boxId)) {
                     var pixelPosition = this.container.getPixelPositionById(this.boxId)
                     return {
@@ -77,7 +155,7 @@
                     display: 'none'
                 }
             },
-            classes () {
+            classes() {
                 return {
                     'dnd-grid-box': true,
                     'dragging': this.dragging,
@@ -86,7 +164,7 @@
             }
         },
         methods: {
-            findContainer () {
+            findContainer() {
                 let current = this
                 while (current.$parent) {
                     current = current.$parent
@@ -97,7 +175,7 @@
                 return null
             }
         },
-        mounted () {
+        mounted() {
             this.container = this.findContainer()
             if (!this.container) {
                 throw new Error('Can not find container')
@@ -106,82 +184,19 @@
             // register component on parent
             this.container.registerBox(this)
 
-            // moving
+            // moving: Add listener to drag handle for moving the box around
             this.$dragHandle = this.$el || this.$refs.dragHandle
-            this.$dragHandle.addEventListener('mousedown', evt => {
-                if (!utils.matchesSelector(evt.target, this.dragSelector)) {
-                    return
-                }
+            this.$dragHandle.addEventListener('mousedown', dragEvent)
+            this.$dragHandle.addEventListener('touchstart', dragEvent)
 
-                evt.preventDefault()
-                this.dragging = true
-                this.$emit('dragStart')
-                let mouseX = evt.clientX
-                let mouseY = evt.clientY
-
-                const handleMouseUp = evt => {
-                    window.removeEventListener('mouseup', handleMouseUp, true)
-                    window.removeEventListener('mousemove', handleMouseMove, true)
-
-                    this.dragging = false
-
-                    var offset = {
-                        x: evt.clientX - mouseX,
-                        y: evt.clientY - mouseY
-                    }
-                    this.$emit('dragEnd', { offset })
-                }
-
-                const handleMouseMove = evt => {
-                    var offset = {
-                        x: evt.clientX - mouseX,
-                        y: evt.clientY - mouseY
-                    }
-                    this.$emit('dragUpdate', { offset })
-                }
-
-                window.addEventListener('mouseup', handleMouseUp, true)
-                window.addEventListener('mousemove', handleMouseMove, true)
-            })
-
-            // resizing
+            // resizing: Add listener to resize handle for resizing the box
             this.$resizeHandle = this.$refs.resizeHandle
             if (this.$resizeHandle) {
-                this.$resizeHandle.addEventListener('mousedown', evt => {
-                    evt.preventDefault()
-                    evt.stopPropagation()
-                    this.resizing = true
-                    this.$emit('resizeStart')
-                    let mouseX = evt.clientX
-                    let mouseY = evt.clientY
-
-                    const handleMouseUp = evt => {
-                        window.removeEventListener('mouseup', handleMouseUp, true)
-                        window.removeEventListener('mousemove', handleMouseMove, true)
-
-                        this.resizing = false
-
-                        var offset = {
-                            x: evt.clientX - mouseX,
-                            y: evt.clientY - mouseY
-                        }
-                        this.$emit('resizeEnd', { offset })
-                    }
-
-                    const handleMouseMove = evt => {
-                        var offset = {
-                            x: evt.clientX - mouseX,
-                            y: evt.clientY - mouseY
-                        }
-                        this.$emit('resizeUpdate', { offset })
-                    }
-
-                    window.addEventListener('mouseup', handleMouseUp, true)
-                    window.addEventListener('mousemove', handleMouseMove, true)
-                })
+                this.$resizeHandle.addEventListener('mousedown', resizeEvent)
+                this.$resizeHandle.addEventListener('touchstart', resizeEvent)
             }
         },
-        beforeDestroy () {
+        beforeDestroy() {
             // register component on parent
             if (this.container) {
                 this.container.unregisterBox(this)
