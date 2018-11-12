@@ -43,6 +43,29 @@
     import { List as ContainerList } from './Container'
     import * as utils from './utils'
 
+    let eventName = ''
+    
+    const handleEnd = evt => {
+        window.removeEventListener('mouseup', handleEnd, true)
+        window.removeEventListener('touchend', handleEnd, true)
+        window.removeEventListener('mousemove', handleMove, true)
+        window.removeEventListener('touchmove', handleMove, true)
+
+        if(eventName === 'dragEnd') this.dragging = false
+        if(eventName === 'resizeEnd') this.resizing = false
+
+        const handleOffset = {
+            x: (evt.clientX || evt.changedTouches[0].pageX) - xCo,
+            y: (evt.clientY || evt.changedTouches[0].pageY) - yCo
+        }
+        this.$emit(eventName, {offset})
+    }
+    
+    const offset = evt => {
+        x: (evt.clientX || evt.touches[0].pageX) - xCo,
+        y: (evt.clientY || evt.touches[0].pageY) - yCo
+    }
+
     const dragEvent = evt => {
         // Handle clicks on other area's than the drag bar
         if (!utils.matchesSelector(evt.target, this.dragSelector)) {
@@ -52,32 +75,15 @@
         evt.preventDefault()
         this.dragging = true
         this.$emit('dragStart')
-        let xCo = evt.clientX || evt.touches[0].pageX
-        let yCo = evt.clientY || evt.touches[0].pageY
-
-        const handleEnd = evt => {
-            window.removeEventListener('mouseup', handleEnd, true)
-            window.removeEventListener('touchend', handleEnd, true)
-            window.removeEventListener('mousemove', handleMove, true)
-            window.removeEventListener('touchmove', handleMove, true)
-
-            this.dragging = false
-
-            const offset = {
-                x: (evt.clientX || evt.changedTouches[0].pageX) - xCo,
-                y: (evt.clientY || evt.changedTouches[0].pageY) - yCo
-            }
-            this.$emit('dragEnd', {offset})
-        }
+        const xCo = evt.clientX || evt.touches[0].pageX
+        const yCo = evt.clientY || evt.touches[0].pageY
 
         const handleMove = evt => {
-            const offset = {
-                x: (evt.clientX || evt.touches[0].pageX) - xCo,
-                y: (evt.clientY || evt.touches[0].pageY) - yCo
-            }
+            const offset = handleOffset(evt)
             this.$emit('dragUpdate', {offset})
         }
 
+        eventName = 'dragEnd'
         window.addEventListener('mouseup', handleEnd, true)
         window.addEventListener('touchend', handleEnd, true)
         window.addEventListener('mousemove', handleMove, true)
@@ -89,36 +95,19 @@
         evt.stopPropagation()
         this.resizing = true
         this.$emit('resizeStart')
-        let mouseX = evt.clientX
-        let mouseY = evt.clientY
+        const xCo = (evt.clientX || evt.touches[0].pageX) - xCo
+        const yCo = (evt.clientY || evt.touches[0].pageY) - yCo
 
-        const handleMouseUp = evt => {
-            window.removeEventListener('mouseup', handleMouseUp, true)
-            window.removeEventListener('touchend', handleMouseUp, true)
-            window.removeEventListener('mousemove', handleMouseMove, true)
-            window.removeEventListener('touchmove', handleMouseMove, true)
-
-            this.resizing = false
-
-            var offset = {
-                x: evt.clientX - mouseX,
-                y: evt.clientY - mouseY
-            }
-            this.$emit('resizeEnd', {offset})
-        }
-
-        const handleMouseMove = evt => {
-            var offset = {
-                x: evt.clientX - mouseX,
-                y: evt.clientY - mouseY
-            }
+        const handleMove = evt => {
+            const offset = handleOffset(evt)
             this.$emit('resizeUpdate', {offset})
         }
 
-        window.addEventListener('mouseup', handleMouseUp, true)
-        window.addEventListener('touchend', handleMouseUp, true)
-        window.addEventListener('mousemove', handleMouseMove, true)
-        window.addEventListener('touchmove', handleMouseMove, true)
+        eventName = 'resizeEnd'
+        window.addEventListener('mouseup', handleEnd, true)
+        window.addEventListener('touchend', handleEnd, true)
+        window.addEventListener('mousemove', handleMove, true)
+        window.addEventListener('touchmove', handleMove, true)
     }
 
     export default {
@@ -142,7 +131,7 @@
         computed: {
             style() {
                 if (this.container && this.container.isBoxVisible(this.boxId)) {
-                    var pixelPosition = this.container.getPixelPositionById(this.boxId)
+                    const pixelPosition = this.container.getPixelPositionById(this.boxId)
                     return {
                         display: 'block',
                         width: pixelPosition.w + 'px',
