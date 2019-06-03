@@ -23,7 +23,7 @@
     "prepublishOnly": "npm run build"
   },
   "files": [
-    "src/"
+    "dist/"
   ],
   "keywords": [
     "vue",
