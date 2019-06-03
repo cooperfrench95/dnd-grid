@@ -1,6 +1,6 @@
-import Container from './Container'
-import Box from './Box'
-import * as utils from './utils'
+import Container from './Container.vue'
+import Box from './Box.vue'
+import * as utils from './utils.js'
 
 export {
     Container,

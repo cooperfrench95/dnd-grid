@@ -54,7 +54,7 @@
 </style>
 
 <script>
-    import { List as ContainerList } from './Container'
+    import { List as ContainerList } from './Container.vue'
     import * as utils from './utils'
 
     export default {
