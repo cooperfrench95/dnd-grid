@@ -99,10 +99,8 @@ The **components** require **Vue >= 2.0.0**
 ### How to import (using ES6 import)
 
 ```javascript
-// import Container and Box components
-import { Container, Box } from '@dattn/dnd-grid'
-// minimal css for the components to work properly
-import '@dattn/dnd-grid/dist/dnd-grid.css'
+import { Container, Box } from '@dattn/dnd-grid/dist/dnd-grid-edit';
+import '@dattn/dnd-grid/dist/dnd-grid-edit.css';
 ```
 
 ### Setup component
